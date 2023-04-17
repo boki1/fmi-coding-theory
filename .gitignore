@@ -1,3 +1,4 @@
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
@@ -274,3 +275,6 @@ TSWLatexianTemp*
 
 # Makeindex log files
 *.lpz
+
+*cmake-build-debug/
+*.idea/
