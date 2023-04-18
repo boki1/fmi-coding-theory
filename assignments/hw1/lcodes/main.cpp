@@ -31,7 +31,7 @@ namespace demo {
         void damage(std::vector<bool> &word) {
             std::random_device rd;
             std::mt19937 mt(rd());
-            std::uniform_int_distribution<> dist_num_errors(1, m_correcting_code->capabilities() - 1);
+            std::uniform_int_distribution<> dist_num_errors(0, m_correcting_code->capabilities() - 1);
             std::vector<bool> flipped(word.size(), false);
 
             const auto errors = dist_num_errors(mt);
@@ -47,35 +47,51 @@ namespace demo {
         }
 
         std::vector<bool> transfer(const std::vector<bool> &word) {
-             auto tx_word = m_correcting_code->encode(word);
-             damage(tx_word);
-             const auto rx_word = m_correcting_code->decode(tx_word);
-             return rx_word;
+            auto tx_word = m_correcting_code->encode(word);
+            damage(tx_word);
+            const auto rx_word = m_correcting_code->decode(tx_word);
+            return rx_word;
         }
 
     private:
         T *m_correcting_code;
     };
 
+    void test_linear_5_2() {
+        std::vector<double> generator_raw{
+#include "generators/generator_matrix_for_5-2_lcode.inc"
+        };
+
+        try {
+            auto lcode = linear_code::from_generator_matrix_as_array(generator_raw, 5, 2);
+
+            noisy_channel<linear_code> channel{&lcode};
+            auto word1 = make_word<5>(0b11001);
+            channel.damage(word1);
+        } catch (coding::linear_code_exception &e) {
+            std::cout << e.what() << '\n';
+        }
+    }
+
+    // The [8,4,3] Hamming code, which encodes 4 information bits into 8 bits by adding 4 parity bits.
+    void test_linear_8_4() {
+        std::vector<double> generator{
+#include "generators/generator_matrix_for_8-4_lcode.inc"
+        };
+
+        try {
+            auto lcode = linear_code::from_generator_matrix_as_array(generator, 8, 4);
+        } catch (coding::linear_code_exception &e) {
+            std::cout << e.what() << '\n';
+        }
+    }
 }
 
 int main() {
     using namespace demo;
 
-    double generator_matrix_5_2[]{
-#include "generators/generator_matrix_for_5-2_lcode.inc"
-    };
-
-
-    try {
-        auto linear_code_5_2 = linear_code::from_generator_matrix_as_array(generator_matrix_5_2, 5, 2);
-
-        noisy_channel<linear_code> channel{&linear_code_5_2};
-        auto word1 = make_word<5>(0b11001);
-        channel.damage(word1);
-    } catch (coding::linear_code_exception &e) {
-        std::cout << e.what() << '\n';
-    }
+    test_linear_5_2();
+    test_linear_8_4();
 
     return 0;
 }

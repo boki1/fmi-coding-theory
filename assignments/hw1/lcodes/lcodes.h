@@ -39,8 +39,8 @@ class linear_code {
 
     void evaluate_decoding_table();
 
-    // I have set some reasonable limits for the properties of the code.
-    bool sanity_check_properties() const;
+    // Throws on invalid data.
+    void sanity_check_properties() const;
 
 public: // Operations:
     using code_vector = std::vector<bool>;
@@ -56,7 +56,7 @@ public: // Operations:
 public: // Instance control:
     // TODO: Make movable.
 
-    explicit linear_code(gsl_matrix *t_code, size_t t_basis_size, size_t t_word_length);
+    explicit linear_code(gsl_matrix *t_code, size_t t_word_length, size_t t_basis_size);
     linear_code(const linear_code &);
     linear_code& operator=(const linear_code&);
 
@@ -70,10 +70,7 @@ public: // Instance control:
     // FIXME: We do not use double. Improve upon the memory layout by using `gsl_matrix_uint`.
 
     [[nodiscard]]
-    static linear_code from_generator_matrix_as_array(double matrix_as_array[], std::size_t rows, std::size_t cols);
-
-    [[nodiscard]]
-    static linear_code from_check_matrix_as_array(double matrix_as_array[], std::size_t rows, std::size_t cols);
+    static linear_code from_generator_matrix_as_array(const std::vector<double> &, std::size_t, std::size_t);
 
     [[nodiscard]]
     static linear_code from_dual(const linear_code &);
@@ -102,12 +99,12 @@ private:
     std::size_t m_basis_size;
 
     // m_min_distance in the minimal distance between two code words (using the Hamming metric).
-    // It is defined as d(C) = min { d(a, b) | a, b \in C }.
-    std::size_t m_min_distance;
+    // It is defined as d(C) = min { d(a, b) | a, b \in C }. 0 is obviously an invalid value.
+    std::size_t m_min_distance{0};
 
     // m_capabilities stores the unambiguous decoding capabilities of the code, i.e - the maximum
     // amount of errors in a single word that code may correct properly.
-    std::size_t m_capabilities;
+    std::size_t m_capabilities{0};
 
     // m_code is a matrix with elements of GF(2) with dimensions m_basis_size x (m_basis_size + m_word_length).
     gsl_matrix *m_code{nullptr};
