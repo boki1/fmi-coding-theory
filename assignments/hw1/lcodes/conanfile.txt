@@ -3,5 +3,4 @@ fmt/9.1.0
 gsl/2.7
 
 [generators]
-CMakeDeps
-CMakeToolchain
+cmake
