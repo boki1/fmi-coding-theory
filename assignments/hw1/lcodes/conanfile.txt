@@ -1,6 +1,7 @@
 [requires]
 fmt/9.1.0
 gsl/2.7
+ms-gsl/4.0.0
 
 [generators]
 cmake
