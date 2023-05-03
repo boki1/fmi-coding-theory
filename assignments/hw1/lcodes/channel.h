@@ -12,23 +12,14 @@ namespace coding {
 
     class channel {
 
-    public: // Helpers
-        template<const int N>
-        static gsl_vector_ptr make_word(std::bitset<N> bits) {
-            gsl_vector_ptr vec{gsl_vector_alloc(bits.size()), &gsl_vector_free};
-            for (int i = 0; i < bits.size(); ++i)
-                gsl_vector_set(vec.get(), i, bits.test(i));
-            return vec;
-        }
-
-        static gsl_vector &with_noise(gsl_vector &word);
-
     public: // Instance control
         explicit channel(linear_code &&t_ecc)
                 : m_ecc{std::move(t_ecc)} {}
 
     public: // Operations
         gsl_vector_ptr transfer(gsl_vector_ptr &&word);
+
+        static gsl_vector &with_noise(gsl_vector &word);
 
     private:
         linear_code m_ecc;

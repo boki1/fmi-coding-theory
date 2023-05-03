@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstdint>
 #include <optional>
 #include <utility>
@@ -6,6 +7,7 @@
 #include <vector>
 #include <memory>
 #include <sstream>
+#include <bitset>
 
 //! Sadly, there is a naming collision in between 2 of the 3 libraries that I am using.
 //! GSL means both "Guidelines Support Library" and "GNU Scientific Library". Thus,
@@ -67,6 +69,21 @@ namespace coding {
 
     namespace gsl_wrapper {
         gsl_matrix_ptr gsl_matrix_transpose_non_square(const gsl_matrix &mx);
+
+        template<const int N>
+        static gsl_vector_ptr make_word(std::bitset<N> bits) {
+            gsl_vector_ptr vec{gsl_vector_alloc(bits.size()), &gsl_vector_free};
+            for (int i = 0; i < bits.size(); ++i)
+                gsl_vector_set(vec.get(), i, bits.test(i));
+            return vec;
+        }
+
+        // In-place dynamic variant of the other overload.
+        static void make_word(std::uint64_t bits, gsl_vector &vec) {
+            assert(vec.size <= sizeof(bits) * CHAR_BIT);
+            for (int i = 0; i < vec.size; ++i)
+                gsl_vector_set(&vec, i, bits & (1 << i));
+        }
     }
 
 /// Implementation of binary linear code.
@@ -87,6 +104,8 @@ namespace coding {
         gsl_vector_ptr with_redundancy(const gsl_vector &word) const; // Throws on invalid input.
 
     public: // Operations:
+        [[nodiscard]] static std::size_t weight(const gsl_vector &);
+
         // Encodes a single data vector into a code vector.
         [[nodiscard]] gsl_vector_ptr encode(const gsl_vector &);
 
@@ -124,11 +143,21 @@ namespace coding {
 
         [[nodiscard]] std::size_t min_distance() const noexcept { return m_min_distance; }
 
-        [[nodiscard]] std::size_t capabilities() const noexcept { return m_capabilities; }
+        [[nodiscard]] std::size_t max_errors_detect() const noexcept { return m_max_errors_detect; }
+
+        [[nodiscard]] std::size_t max_errors_correct() const noexcept { return m_max_errors_correct; }
+
+        [[nodiscard]] std::size_t radius() const noexcept { return m_radius; }
 
         [[nodiscard]] const gsl_matrix &code() const noexcept { return *m_code; }
 
+        void set_name(const std::string &name) noexcept { m_name = name; }
+
+        [[nodiscard]] const std::string &name() const noexcept { return m_name; }
+
     private:
+        std::string m_name;
+
         // m_code is a matrix with elements of GF(2) with dimensions m_basis_size x (m_basis_size + m_word_length).
         // We store the code in standard format generator matrix - G = (E|A).
         gsl_matrix_ptr m_code;
@@ -143,9 +172,12 @@ namespace coding {
         // It is defined as d(C) = min { d(a, b) | a, b \in C }. 0 is obviously an invalid value.
         std::size_t m_min_distance{0};
 
-        // m_capabilities stores the unambiguous decoding capabilities of the code, i.e - the maximum
+        // m_max_errors_detect stores the unambiguous decoding capabilities of the code, i.e - the maximum
         // amount of errors in a single word that code may correct properly.
-        std::size_t m_capabilities{0};
+        std::size_t m_max_errors_detect{0};
+        std::size_t m_max_errors_correct{0};
+
+        std::size_t m_radius{0};
 
         // m_decoding_table is what is known as Slepian's table and is one of the methods for decoding linear codes.
         // The member gets filled once at the first time of word decoding and gets used without modifications after that.
@@ -153,5 +185,21 @@ namespace coding {
     };
 
 }
+
+template<>
+struct fmt::formatter<coding::linear_code>: formatter<string_view> {
+    template<typename FormatContext>
+    auto format(const coding::linear_code& lcode, FormatContext& ctx) const {
+        std::stringstream sstr;
+        sstr << "linear_code <" << lcode.name() << "> {\n";
+        sstr << "  - n: " << lcode.word_length() << '\n';
+        sstr << "  - k: " << lcode.basis_size() << '\n';
+        sstr << "  - d: " << lcode.min_distance() << '\n';
+        sstr << "  - R: " << lcode.radius() << '\n';
+        sstr << "  - max errors:\n  - detect: " << lcode.max_errors_detect() << "\n    - correct: " << lcode.max_errors_correct() << '\n';
+        sstr << "};";
+        return formatter<string_view>::format(sstr.str(), ctx);
+    }
+};
 
 #endif // CODINGTHEORY_HW1_LCODES_H

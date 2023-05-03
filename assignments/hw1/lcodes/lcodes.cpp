@@ -86,10 +86,20 @@ namespace coding {
     namespace gsl_wrapper {
 
         gsl_vector_ptr gsl_matrix_mul_vector(const gsl_vector &vec, const gsl_matrix &matrix) {
-            constexpr static double alpha = 1.0; // scaling factor for the matrix-vector product
-            constexpr static double beta = 0.0; // scaling factor for the result vector
+            assert(vec.size == matrix.size1);
             gsl_vector_ptr result{gsl_vector_alloc(matrix.size2), &gsl_vector_free};
-            gsl_blas_dgemv(CblasNoTrans, alpha, &matrix, &vec, beta, result.get());
+
+            // This great library does not have an additional matrix-vector multiplication function. The only way I
+            // found was to *allocated* a matrix anew and *copy* the vector content there. Then the result will be yet
+            // another matrix - whereas it is actually a vector-column, which I am forced to *copy again* into the vector
+            // that I want to return. No, thanks.
+            for (int j = 0; j < matrix.size2; j++) {
+                double sum = 0;
+                for (int i = 0; i < matrix.size1; i++)
+                    sum += gsl_matrix_get(&matrix, i, j) * gsl_vector_get(&vec, i);
+                gsl_vector_set(result.get(), j, sum);
+            }
+
             return result;
         }
     }
@@ -97,14 +107,37 @@ namespace coding {
     /*
      * Helpers
      */
-    void linear_code::evaluate_min_distance() {}
+    void linear_code::evaluate_min_distance() {
+        const std::size_t num_keywords = 1 << m_basis_size;
 
-    void linear_code::evaluate_capabilities() {}
+        std::size_t min_weight = std::numeric_limits<int>::max();
+        gsl_vector_ptr min_weighted_word{gsl_vector_alloc(m_code->size1), &gsl_vector_free};
+        gsl_vector_ptr current{gsl_vector_alloc(m_code->size1), &gsl_vector_free};
+
+        // Skip the empty word.
+        for (uint64_t i = 1; i < num_keywords; ++i) {
+            gsl_wrapper::make_word(i, *current);
+            auto word_with_redundancy = with_redundancy(*current);
+            if (const auto wt = weight(*word_with_redundancy); wt < min_weight) {
+                gsl_vector_memcpy(min_weighted_word.get(), current.get());
+                min_weight = wt;
+            }
+        }
+
+        m_min_distance = min_weight;
+    }
+
+    void linear_code::evaluate_capabilities() {
+        assert(m_min_distance > 0);
+        m_max_errors_detect = m_min_distance - 1;
+        m_max_errors_correct = (m_min_distance - 1) / 2;
+        m_radius = m_word_length - m_basis_size;
+    }
 
     void linear_code::evaluate_decoding_table() {}
 
     void linear_code::sanity_check_properties() const {
-        const bool sane_generator_matrix_dimensions = m_code->size1 > m_code->size2 && m_code->size1 < (1 << 7);
+        const bool sane_generator_matrix_dimensions = m_code->size1 > m_code->size2 && m_code->size1 < (1 << 10);
         if (!sane_generator_matrix_dimensions)
             throw linear_code_exception{fmt::format("Error: Insane generator matrix dimensions!")};
     }
@@ -126,13 +159,11 @@ namespace coding {
     class linear_code linear_code::from_parity_equations(gsl_matrix_ptr &&parity) {
         auto generator = util::parity_to_generator(*parity);
         auto code = linear_code{std::move(generator)};
-        // Initialize properties.
         return code;
     }
 
     class linear_code linear_code::from_generator(gsl_matrix_ptr &&generator) {
         auto code = linear_code{std::move(generator)};
-        // Initialize properties.
         return code;
     }
 
@@ -140,15 +171,26 @@ namespace coding {
     }
 
     linear_code::linear_code(gsl_matrix_ptr &&generator)
-            : m_code{util::generator_to_standard_form(std::move(generator))}, m_basis_size{m_code->size1},
-              m_word_length{m_code->size2} {
+            : m_code{util::generator_to_standard_form(std::move(generator))}
+            , m_basis_size{m_code->size1}
+            , m_word_length{m_code->size2} {
         // NB: m_code is initialized first because it is declared first in the header file and not
         // 	   because it is put first in the list here.
+        evaluate_min_distance();
+        evaluate_capabilities();
     }
 
     /*
      * Operations
      */
+
+    std::size_t linear_code::weight(const gsl_vector &word) {
+        std::size_t weight = 0;
+        for (int i = 0; i < word.size; ++i)
+            weight += static_cast<std::size_t>(gsl_vector_get(&word, i) != 0);
+        return weight;
+    }
+
 
     gsl_vector_ptr linear_code::encode(const gsl_vector &word) {
         return with_redundancy(word);

@@ -38,6 +38,8 @@ namespace coding {
                 return generator;
             }();
             auto hamming_code = linear_code::from_generator(std::move(hamming_generator));
+            hamming_code.set_name("Hamming [7, 4]");
+
             fmt::print("Generator for Hamming [7, 4]:\n{}\n", hamming_code.code());
 
             auto hamming_parity = util::generator_to_parity(hamming_code.code());
@@ -45,6 +47,8 @@ namespace coding {
 
             auto hamming_generator_ = util::parity_to_generator(*hamming_parity);
             fmt::print("Generator from parity matrix:\n{}\n", *hamming_generator_);
+
+            fmt::print("{}", hamming_code);
 
 //    channel channel{std::move(hamming_code)};
 //
@@ -115,17 +119,24 @@ namespace coding {
 int main() {
     using namespace coding::test;
 
+    try {
+
     separator("Hamming code [7, 4]");
     hamming();
+//
+//    separator("Linear code [4, 2]");
+//    lin_4_2();
 
-    separator("Linear code [4, 2]");
-    lin_4_2();
+//    separator("Linear code [6, 3]");
+//    lin_6_3();
 
-    separator("Linear code [6, 3]");
-    lin_6_3();
+//    separator("Linear code [5, 3]");
+//    lin_5_3();
 
-    separator("Linear code [5, 3]");
-    lin_5_3();
+    } catch (coding::linear_code_exception linear_code_exception) {
+        fmt::print("{}", linear_code_exception.what());
+        return 1;
+    }
 
     return 0;
 }
