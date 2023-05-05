@@ -26,6 +26,14 @@ $ ccmake ${output_dir}
 ```
 -----------
 
+**To do**
+
+- I want to implement the following syntax for initialization of matrices:
+```c++
+   auto generator_mx = gsl_wrapper::gsl_matrix_inline << 1, 2, 3,
+                                                         4, 5, 6;
+```
+
 **LICENSE**
 
 MIT License, Copyright (c) 2023 Kristiyan Stoimenov
