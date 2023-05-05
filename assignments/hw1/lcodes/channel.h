@@ -7,6 +7,7 @@
 #include <bitset>
 
 #include "lcodes.h"
+#include "gsl_wrapper.h"
 
 namespace coding {
 
@@ -17,7 +18,7 @@ namespace coding {
                 : m_ecc{std::move(t_ecc)} {}
 
     public: // Operations
-        gsl_vector_ptr transfer(gsl_vector_ptr &&word);
+        gsl_wrapper::gsl_vector_ptr transfer(const gsl_vector &word);
 
         static gsl_vector &with_noise(gsl_vector &word);
 

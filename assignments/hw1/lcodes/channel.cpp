@@ -17,7 +17,7 @@ namespace coding {
         std::vector<bool> flipped(word.size, false);
 
         const auto errors = dist_num_errors(mt);
-        std::uniform_int_distribution<int> dist_indices(0, word.size);
+        std::uniform_int_distribution<int> dist_indices(0, word.size - 1);
 
         for (int i = 0; i < errors; ++i) {
             int index = dist_indices(mt);
@@ -30,11 +30,13 @@ namespace coding {
         return word;
     }
 
-    gsl_vector_ptr channel::transfer(coding::gsl_vector_ptr &&word) {
-        auto tx_word = m_ecc.encode(*word);
-        (void) with_noise(*tx_word);
-        auto rx_word = m_ecc.decode(*tx_word);
-        return rx_word;
+    gsl_wrapper::gsl_vector_ptr channel::transfer(const gsl_vector &word) {
+        fmt::print("Sending {}", word);
+//        auto tx_word = m_ecc.encode(word);
+//        fmt::print("Encoded as {}", *tx_word);
+//        (void) with_noise(*tx_word);
+//        auto rx_word = m_ecc.decode(*tx_word);
+//        return rx_word;
     }
     
 }

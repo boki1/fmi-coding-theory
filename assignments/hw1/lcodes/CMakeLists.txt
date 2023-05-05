@@ -9,7 +9,7 @@ conan_basic_setup(TARGETS)
 
 option(LCODES_BUILD_DEMO "Whether the additional demonstration program should be built.")
 
-add_library(lcodes lcodes.h lcodes.cpp)
+add_library(lcodes lcodes.h lcodes.cpp gsl_wrapper.h gsl_wrapper.cpp channel.cpp channel.h)
 target_include_directories(lcodes PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(lcodes PRIVATE
 		CONAN_PKG::gsl
@@ -17,6 +17,6 @@ target_link_libraries(lcodes PRIVATE
 		CONAN_PKG::fmt)
 
 #if("${LCODES_BUILD_DEMO}" STREQUAL "yes")
-	add_executable(lcodes-demo main.cpp channel.cpp channel.h)
+	add_executable(lcodes-demo main.cpp)
 	target_link_libraries(lcodes-demo PRIVATE lcodes)
 #endif()
