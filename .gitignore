@@ -281,3 +281,6 @@ TSWLatexianTemp*
 
 # I do not have copyright privilages over them :/
 materials/
+
+bch-codes/out/
+bch-codes/src/main.pdf

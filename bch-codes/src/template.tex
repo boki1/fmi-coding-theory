@@ -1,0 +1,73 @@
+\definecolor{salmon}{RGB}{255, 128, 128}
+\definecolor{darkgrey}{RGB}{50, 50, 50}
+
+\setbeamercolor{frametitle}{fg=darkgrey}
+\setbeamercolor{title separator}{fg=salmon}
+\setbeamercolor{footline}{fg=darkgrey}
+\setbeamercolor{progress bar}{fg=salmon}
+\setbeamercolor{alerted text}{fg=salmon}
+\setbeamercolor{block title example}{fg=salmon}
+\setbeamercolor{section in foot}{fg=white, bg=salmon}
+
+\makeatother
+\setbeamertemplate{footline}
+{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{section in foot}%
+    \usebeamerfont{title in foot}К. Стоименов
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{section in foot}%
+      \usebeamerfont{title in foot}\insertshorttitle
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,right]{section in foot}%
+    \insertframenumber{} / \inserttotalframenumber\hspace*{2ex}
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+\makeatletter
+\setbeamertemplate{navigation symbols}{}
+
+\setbeamertemplate{frametitle}
+{
+\vspace*{16pt}
+\Large{\insertframetitle}
+% \insertprogressbar
+}
+
+\setbeamertemplate{section in toc}{{\color{salmon}\inserttocsectionnumber.}~\inserttocsection}
+
+\setbeamertemplate{caption}{\raggedright\insertcaption\par}
+
+
+\renewcommand*{\bibfont}{\footnotesize}
+
+\newcommand{\iu}{{i\mkern1mu}}
+
+\newcommand{\rootsofunity}[1] {
+\begin{tikzpicture}
+  \coordinate (center) at (0, 0);
+  \def\radius{2cm}
+  \def\n{#1}
+  \pgfmathsetmacro\angle{360/\n}
+  \pgfmathsetmacro\startangle{90}
+
+  \foreach \i in {0,...,\the\numexpr\n-1\relax} {
+    \coordinate (point\i) at ({\startangle+\angle*\i}:\radius);
+    \coordinate (label\i) at ({\startangle+\angle*\i}:\radius+0.25cm);
+    \node[anchor={\startangle+\angle*\i-90}] at (label\i){$\omega_{\n}^{\the\numexpr\n-\i\relax}$};
+    \fill[salmon] (point\i) circle (2pt);
+  }
+
+  \draw[salmon, thick] (point0) \foreach \i in {1,...,\the\numexpr\n-1\relax} { -- (point\i) } -- cycle;
+  \draw[black, thick] (center) circle (\radius);
+  \draw[->] (-2.5,0) -- (2.5,0) node[right] {$\text{x}$};
+  \draw[->] (0,-2.5) -- (0,2.5) node[above] {$\text{y}$};
+\end{tikzpicture}
+}
+
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
+
+
+:q
+ls
